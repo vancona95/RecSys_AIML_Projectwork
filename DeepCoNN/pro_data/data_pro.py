@@ -48,7 +48,7 @@ def pad_sentences(u_text,u_len,padding_word="<PAD/>"):
     """
     sequence_length=u_len
     u_text2={}
-    print len(u_text)
+    print(len(u_text))
     for i in u_text.keys():
         #print i
         sentence = u_text[i]
@@ -110,18 +110,18 @@ def load_data(train_data,valid_data,user_review,item_review):
     # Load and preprocess data
     u_text,i_text, y_train, y_valid,u_len,i_len,uid_train,iid_train,uid_valid,iid_valid,user_num,item_num=\
         load_data_and_labels(train_data,valid_data,user_review,item_review)
-    print "load data done"
+    print("load data done")
     u_text = pad_sentences(u_text,u_len)
-    print "pad user done"
+    print("pad user done")
     i_text=pad_sentences(i_text,i_len)
-    print "pad item done"
+    print("pad item done")
 
     user_voc = [x for x in u_text.itervalues()]
     item_voc = [x for x in i_text.itervalues()]
 
     vocabulary_user, vocabulary_inv_user, vocabulary_item, vocabulary_inv_item = build_vocab(user_voc, item_voc)
-    print len(vocabulary_user)
-    print len(vocabulary_item)
+    print(len(vocabulary_user))
+    print(len(vocabulary_item))
     u_text, i_text = build_input_data(u_text, i_text, vocabulary_user, vocabulary_item)
     y_train = np.array(y_train)
     y_valid = np.array(y_valid)
@@ -175,7 +175,7 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
             i_text[int(line[1])]=clean_str(i_text[int(line[1])])
             i_text[int(line[1])]=i_text[int(line[1])].split(" ")
         y_train.append(float(line[2]))
-    print "valid"
+    print("valid")
 
     uid_valid = []
     iid_valid = []
@@ -201,7 +201,7 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
             i_text[int(line[1])]=i_text[int(line[1])].split(" ")
 
         y_valid.append(float(line[2]))
-    print "len"
+    print("len")
     u = np.array([len(x) for x in u_text.itervalues()])
     x = np.sort(u)
     u_len = x[int(0.85* len(u)) - 1]
@@ -210,12 +210,12 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
     i = np.array([len(x) for x in i_text.itervalues()])
     y = np.sort(i)
     i_len = y[int(0.85 * len(i)) - 1]
-    print "u_len:",u_len
-    print "i_len:",i_len
+    print("u_len:",u_len)
+    print("i_len:",i_len)
     user_num = len(u_text)
     item_num = len(i_text)
-    print "user_num:", user_num
-    print "item_num:", item_num
+    print("user_num:", user_num)
+    print("item_num:", item_num)
     return [u_text,i_text,y_train,y_valid,u_len,i_len,uid_train,iid_train,uid_valid,iid_valid,user_num,item_num]
 
 
