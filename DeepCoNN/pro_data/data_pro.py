@@ -16,11 +16,14 @@ import tensorflow as tf
 import csv
 import os
 import pickle
-tf.flags.DEFINE_string("valid_data","../data/music/music_valid.csv", " Data for validation")
-tf.flags.DEFINE_string("test_data", "../data/music/music_test.csv", "Data for testing")
-tf.flags.DEFINE_string("train_data", "../data/music/music_train.csv", "Data for training")
-tf.flags.DEFINE_string("user_review", "../data/music/user_review", "User's reviews")
-tf.flags.DEFINE_string("item_review", "../data/music/item_review", "Item's reviews")
+import sys
+
+flags = tf.compat.v1.flags
+flags.DEFINE_string("valid_data","../data/music/music_valid.csv", " Data for validation")
+flags.DEFINE_string("test_data", "../data/music/music_test.csv", "Data for testing")
+flags.DEFINE_string("train_data", "../data/music/music_train.csv", "Data for training")
+flags.DEFINE_string("user_review", "../data/music/user_review", "User's reviews")
+flags.DEFINE_string("item_review", "../data/music/item_review", "Item's reviews")
 def clean_str(string):
     """
     Tokenization/string cleaning for all datasets except for SST.
@@ -116,8 +119,8 @@ def load_data(train_data,valid_data,user_review,item_review):
     i_text=pad_sentences(i_text,i_len)
     print("pad item done")
 
-    user_voc = [x for x in u_text.itervalues()]
-    item_voc = [x for x in i_text.itervalues()]
+    user_voc = [x for x in u_text.values()]
+    item_voc = [x for x in i_text.values()]
 
     vocabulary_user, vocabulary_inv_user, vocabulary_item, vocabulary_inv_item = build_vocab(user_voc, item_voc)
     print(len(vocabulary_user))
@@ -141,8 +144,8 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
     """
     # Load data from files
     f_train = open(train_data, "r")
-    f1=open(user_review)
-    f2=open(item_review)
+    f1=open(user_review, "rb")
+    f2=open(item_review, "rb")
 
     user_reviews=pickle.load(f1)
     item_reviews=pickle.load(f2)
@@ -157,7 +160,7 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
         line = line.split(',')
         uid_train.append(int(line[0]))
         iid_train.append(int(line[1]))
-        if u_text.has_key(int(line[0])):
+        if u_text.__contains__(int(line[0])):
             a=1
         else:
             u_text[int(line[0])] = '<PAD/>'
@@ -166,7 +169,7 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
             u_text[int(line[0])]=clean_str(u_text[int(line[0])])
             u_text[int(line[0])]=u_text[int(line[0])].split(" ")
 
-        if i_text.has_key(int(line[1])):
+        if i_text.__contains__(int(line[1])):
             a=1
         else:
             i_text[int(line[1])] = '<PAD/>'
@@ -185,7 +188,7 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
         line=line.split(',')
         uid_valid.append(int(line[0]))
         iid_valid.append(int(line[1]))
-        if u_text.has_key(int(line[0])):
+        if u_text.__contains__(int(line[0])):
             a=1
         else:
             u_text[int(line[0])] = '<PAD/>'
@@ -193,7 +196,7 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
             u_text[int(line[0])]=u_text[int(line[0])].split(" ")
 
 
-        if i_text.has_key(int(line[1])):
+        if i_text.__contains__(int(line[1])):
             a=1
         else:
             i_text[int(line[1])] = '<PAD/>'
@@ -202,12 +205,12 @@ def load_data_and_labels(train_data,valid_data,user_review,item_review):
 
         y_valid.append(float(line[2]))
     print("len")
-    u = np.array([len(x) for x in u_text.itervalues()])
+    u = np.array([len(x) for x in u_text.values()])
     x = np.sort(u)
     u_len = x[int(0.85* len(u)) - 1]
 
 
-    i = np.array([len(x) for x in i_text.itervalues()])
+    i = np.array([len(x) for x in i_text.values()])
     y = np.sort(i)
     i_len = y[int(0.85 * len(i)) - 1]
     print("u_len:",u_len)
@@ -240,8 +243,8 @@ def batch_iter(data, batch_size, num_epochs, shuffle=True):
 
 if __name__ == '__main__':
     TPS_DIR = '../data/music'
-    FLAGS = tf.flags.FLAGS
-    FLAGS._parse_flags()
+    FLAGS = flags.FLAGS
+    FLAGS(sys.argv)
 
     u_text,i_text, y_train, y_valid, vocabulary_user, vocabulary_inv_user, vocabulary_item, \
     vocabulary_inv_item, uid_train, iid_train, uid_valid, iid_valid, user_num, item_num = \
