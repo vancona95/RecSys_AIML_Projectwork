@@ -34,7 +34,7 @@ def load_model(path: str):
 def load_reviews(review: Dict[str, DataFrame], query_id: str, exclude_id: str, max_length) -> List[int]:
     """
     1. Load review from review dict by userID/itemID
-    2. Exclude unknown review by itemID/userID.
+    2. Exclude unknown review by itemID/userID..
     3. Pad review text to max_length
 
     E.g. get all reviews written by user1 except itemA
