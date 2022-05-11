@@ -13,36 +13,39 @@ In WSDM. ACM, 425-434.
 import numpy as np
 import tensorflow as tf
 import math
-from tensorflow.contrib import learn
+#from tensorflow.models import learn
+#import tensorflow_addons.contrib.learn as slim
+#import tf_slim as slim
+#import tensorflow_addons
 import datetime
-
+import sys
 import pickle
 import DeepCoNN
-
-tf.flags.DEFINE_string("word2vec", "../data/google.bin", "Word2vec file with pre-trained embeddings (default: None)")
-tf.flags.DEFINE_string("valid_data","../data/music/music.valid", " Data for validation")
-tf.flags.DEFINE_string("para_data", "../data/music/music.para", "Data parameters")
-tf.flags.DEFINE_string("train_data", "../data/music/music.train", "Data for training")
+flags = tf.compat.v1.flags
+flags.DEFINE_string("word2vec", "../data/google.bin", "Word2vec file with pre-trained embeddings (default: None)")
+flags.DEFINE_string("valid_data","../data/music/music.valid", " Data for validation")
+flags.DEFINE_string("para_data", "../data/music/music.para", "Data parameters")
+flags.DEFINE_string("train_data", "../data/music/music.train", "Data for training")
 
 # ==================================================
 
 # Model Hyperparameters
 #prova
 #tf.flags.DEFINE_string("word2vec", "./data/rt-polaritydata/google.bin", "Word2vec file with pre-trained embeddings (default: None)")
-tf.flags.DEFINE_integer("embedding_dim", 300, "Dimensionality of character embedding ")
-tf.flags.DEFINE_string("filter_sizes", "3", "Comma-separated filter sizes ")
-tf.flags.DEFINE_integer("num_filters", 100, "Number of filters per filter size")
-tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability ")
-tf.flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularizaion lambda")
-tf.flags.DEFINE_float("l2_reg_V", 0, "L2 regularizaion V")
+flags.DEFINE_integer("embedding_dim", 300, "Dimensionality of character embedding ")
+flags.DEFINE_string("filter_sizes", "3", "Comma-separated filter sizes ")
+flags.DEFINE_integer("num_filters", 100, "Number of filters per filter size")
+flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability ")
+flags.DEFINE_float("l2_reg_lambda", 0.0, "L2 regularizaion lambda")
+flags.DEFINE_float("l2_reg_V", 0, "L2 regularizaion V")
 # Training parameters
-tf.flags.DEFINE_integer("batch_size",100, "Batch Size ")
-tf.flags.DEFINE_integer("num_epochs", 40, "Number of training epochs ")
-tf.flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps ")
-tf.flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps ")
+flags.DEFINE_integer("batch_size",100, "Batch Size ")
+flags.DEFINE_integer("num_epochs", 40, "Number of training epochs ")
+flags.DEFINE_integer("evaluate_every", 100, "Evaluate model on dev set after this many steps ")
+flags.DEFINE_integer("checkpoint_every", 100, "Save model after this many steps ")
 # Misc Parameters
-tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
-tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
+flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
+flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
 
 
 def train_step(u_batch, i_batch, uid, iid, y_batch, batch_num):
@@ -88,8 +91,8 @@ def dev_step(u_batch, i_batch, uid, iid, y_batch, writer=None):
     return [loss, accuracy, mae]
 
 if __name__ == '__main__':
-    FLAGS = tf.flags.FLAGS
-    FLAGS._parse_flags()
+    FLAGS = flags.FLAGS
+    FLAGS(sys.argv)
     print("\nParameters:")
     for attr, value in sorted(FLAGS.__flags.items()):
         print("{}={}".format(attr.upper(), value))
@@ -116,11 +119,11 @@ if __name__ == '__main__':
 
     with tf.Graph().as_default():
 
-        session_conf = tf.ConfigProto(
+        session_conf = tf.compat.v1.ConfigProto(
             allow_soft_placement=FLAGS.allow_soft_placement,
             log_device_placement=FLAGS.log_device_placement)
         session_conf.gpu_options.allow_growth = True
-        sess = tf.Session(config=session_conf)
+        sess = tf.compat.v1.Session(config=session_conf)
         with sess.as_default():
             deep = DeepCoNN.DeepCoNN(
                 user_num=user_num,
@@ -206,7 +209,7 @@ if __name__ == '__main__':
                 sess.run(deep.W2.assign(initW))
 
             l = (train_length / FLAGS.batch_size) + 1
-            print l
+            print(l)
             ll = 0
             epoch = 1
             best_mae = 5
@@ -258,7 +261,7 @@ if __name__ == '__main__':
 
                     if batch_num % 1000 == 0 and batch_num > 1:
                         print("\nEvaluation:")
-                        print batch_num
+                        print(batch_num)
                         loss_s = 0
                         accuracy_s = 0
                         mae_s = 0
@@ -288,9 +291,9 @@ if __name__ == '__main__':
                                                                                              accuracy_s / test_length),
                                                                                          mae_s / test_length))
 
-                print str(epoch) + ':\n'
+                print(str(epoch) + ':\n')
                 print("\nEvaluation:")
-                print "train:rmse,mae:", train_rmse / ll, train_mae / ll
+                print("train:rmse,mae:", train_rmse / ll, train_mae / ll)
                 train_rmse = 0
                 train_mae = 0
 
@@ -327,7 +330,7 @@ if __name__ == '__main__':
                 if best_mae > mae:
                     best_mae = mae
                 print("")
-            print 'best rmse:', best_rmse
-            print 'best mae:', best_mae
+            print('best rmse:', best_rmse)
+            print('best mae:', best_mae)
 
-    print 'end'
+    print('end')
