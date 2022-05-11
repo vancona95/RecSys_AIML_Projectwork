@@ -18,25 +18,25 @@ class DeepCoNN(object):
     def __init__(
             self, user_length,item_length, num_classes, user_vocab_size,item_vocab_size,fm_k,n_latent,user_num,item_num,
             embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0,l2_reg_V=0.0):
-        self.input_u = tf.placeholder(tf.int32, [None, user_length], name="input_u")
-        self.input_i = tf.placeholder(tf.int32, [None, item_length], name="input_i")
-        self.input_y = tf.placeholder(tf.float32, [None,1],name="input_y")
-        self.input_uid = tf.placeholder(tf.int32, [None, 1], name="input_uid")
-        self.input_iid = tf.placeholder(tf.int32, [None, 1], name="input_iid")
-        self.dropout_keep_prob = tf.placeholder(tf.float32, name="dropout_keep_prob")
+        self.input_u = tf.compat.v1.placeholder(tf.int32, [None, user_length], name="input_u")
+        self.input_i = tf.compat.v1.placeholder(tf.int32, [None, item_length], name="input_i")
+        self.input_y = tf.compat.v1.placeholder(tf.float32, [None,1],name="input_y")
+        self.input_uid = tf.compat.v1.placeholder(tf.int32, [None, 1], name="input_uid")
+        self.input_iid = tf.compat.v1.placeholder(tf.int32, [None, 1], name="input_iid")
+        self.dropout_keep_prob = tf.compat.v1.placeholder(tf.float32, name="dropout_keep_prob")
 
         l2_loss = tf.constant(0.0)
 
         with tf.name_scope("user_embedding"):
             self.W1 = tf.Variable(
-                tf.random_uniform([user_vocab_size, embedding_size], -1.0, 1.0),
+                tf.compat.v1.random_uniform([user_vocab_size, embedding_size], -1.0, 1.0),
                 name="W")
             self.embedded_user = tf.nn.embedding_lookup(self.W1, self.input_u)
             self.embedded_users = tf.expand_dims(self.embedded_user, -1)
 
         with tf.name_scope("item_embedding"):
             self.W2 = tf.Variable(
-                tf.random_uniform([item_vocab_size, embedding_size], -1.0, 1.0),
+                tf.compat.v1.random_uniform([item_vocab_size, embedding_size], -1.0, 1.0),
                 name="W")
             self.embedded_item = tf.nn.embedding_lookup(self.W2, self.input_i)
             self.embedded_items = tf.expand_dims(self.embedded_item, -1)
@@ -47,7 +47,7 @@ class DeepCoNN(object):
             with tf.name_scope("user_conv-maxpool-%s" % filter_size):
                 # Convolution Layer
                 filter_shape = [filter_size, embedding_size, 1, num_filters]
-                W = tf.Variable(tf.truncated_normal(filter_shape, stddev=0.1), name="W")
+                W = tf.Variable(tf.compat.v1.truncated_normal(filter_shape, stddev=0.1), name="W")
                 b = tf.Variable(tf.constant(0.1, shape=[num_filters]), name="b")
                 conv = tf.nn.conv2d(
                     self.embedded_users,
@@ -136,13 +136,13 @@ class DeepCoNN(object):
             inter=tf.nn.dropout(inter,self.dropout_keep_prob)
 
             inter=tf.reduce_sum(inter,1,keep_dims=True)
-            print inter
+            print(inter)
             b=tf.Variable(tf.constant(0.1), name='bias')
             
 
             self.predictions =one+inter+b
 
-            print self.predictions
+            print(self.predictions)
         with tf.name_scope("loss"):
             #losses = tf.reduce_mean(tf.square(tf.subtract(self.predictions, self.input_y)))
             losses = tf.nn.l2_loss(tf.subtract(self.predictions, self.input_y))
