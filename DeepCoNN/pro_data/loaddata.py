@@ -89,13 +89,13 @@ item_reviews={}
 user_rid={}
 item_rid={}
 for i in data.values:
-    if user_reviews.__contains__(i[0]):
+    if user_reviews.has_key(i[0]):
         user_reviews[i[0]].append(i[3])
         user_rid[i[0]].append(i[1])
     else:
         user_rid[i[0]]=[i[1]]
         user_reviews[i[0]]=[i[3]]
-    if item_reviews.__contains__(i[1]):
+    if item_reviews.has_key(i[1]):
         item_reviews[i[1]].append(i[3])
         item_rid[i[1]].append(i[0])
     else:
@@ -104,12 +104,12 @@ for i in data.values:
 
 
 for i in data2.values:
-    if user_reviews.__contains__(i[0]):
+    if user_reviews.has_key(i[0]):
         l=1
     else:
         user_rid[i[0]]=[0]
         user_reviews[i[0]]=['0']
-    if item_reviews.__contains__(i[1]):
+    if item_reviews.has_key(i[1]):
         l=1
     else:
         item_reviews[i[1]] = [0]
@@ -124,6 +124,6 @@ pickle.dump(item_rid, open(os.path.join(TPS_DIR, 'item_rid'), 'wb'))
 usercount, itemcount = get_count(data, 'user_id'), get_count(data, 'item_id')
 
 
-print(np.sort(np.array(usercount.values)))
+print((np.sort(np.array(usercount.values))))
 
-print(np.sort(np.array(itemcount.values)))
+print((np.sort(np.array(itemcount.values))))

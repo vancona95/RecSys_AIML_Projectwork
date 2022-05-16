@@ -4,6 +4,7 @@ Created on Dec 8, 2015
 @author: donghyun
 '''
 import numpy as np
+from requests.packages.urllib3.packages.six.moves import xrange
 
 
 def eval_RMSE(R, U, V, TS):

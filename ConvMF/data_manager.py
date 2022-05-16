@@ -6,7 +6,7 @@ Created on Nov 9, 2015
 
 import os
 import sys
-import cPickle as pickl
+import pickle as pickle
 import numpy as np
 
 from operator import itemgetter
@@ -20,28 +20,28 @@ import random
 class Data_Factory():
 
     def load(self, path):
-        R = pickl.load(open(path + "/ratings.all", "rb"))
-        print "Load preprocessed rating data - %s" % (path + "/ratings.all")
-        D_all = pickl.load(open(path + "/document.all", "rb"))
-        print "Load preprocessed document data - %s" % (path + "/document.all")
+        R = pickle.load(open(path + "/ratings.all", "rb"))
+        print ("Load preprocessed rating data - %s" % (path + "/ratings.all"))
+        D_all = pickle.load(open(path + "/document.all", "rb"))
+        print ("Load preprocessed document data - %s" % (path + "/document.all"))
         return R, D_all
 
     def save(self, path, R, D_all):
         if not os.path.exists(path):
             os.makedirs(path)
-        print "Saving preprocessed rating data - %s" % (path + "/ratings.all")
-        pickl.dump(R, open(path + "/ratings.all", "wb"))
-        print "Done!"
-        print "Saving preprocessed document data - %s" % (path + "/document.all")
-        pickl.dump(D_all, open(path + "/document.all", "wb"))
-        print "Done!"
+        print ("Saving preprocessed rating data - %s" % (path + "/ratings.all"))
+        pickle.dump(R, open(path + "/ratings.all", "wb"))
+        print ("Done!")
+        print ("Saving preprocessed document data - %s" % (path + "/document.all"))
+        pickle.dump(D_all, open(path + "/document.all", "wb"))
+        print ("Done!")
 
     def read_rating(self, path):
         results = []
         if os.path.isfile(path):
             raw_ratings = open(path, 'r')
         else:
-            print "Path (preprocessed) is wrong!"
+            print ("Path (preprocessed) is wrong!")
             sys.exit()
         index_list = []
         rating_list = []
@@ -66,7 +66,7 @@ class Data_Factory():
         if os.path.isfile(path):
             raw_word2vec = open(path, 'r')
         else:
-            print "Path (word2vec) is wrong!"
+            print ("Path (word2vec) is wrong!")
             sys.exit()
 
         word2vec_dic = {}
@@ -78,7 +78,7 @@ class Data_Factory():
             _word = tmp[0]
             _vec = np.array(tmp[1:], dtype=float)
             if _vec.shape[0] != dim:
-                print "Mismatch the dimension of pre-trained word vector with word embedding dimension!"
+                print ("Mismatch the dimension of pre-trained word vector with word embedding dimension!")
                 sys.exit()
             word2vec_dic[_word] = _vec
             mean = mean + _vec
@@ -95,19 +95,19 @@ class Data_Factory():
             else:
                 W[i + 1] = np.random.normal(mean, 0.1, size=dim)
 
-        print "%d words exist in the given pretrained model" % count
+        print ("%d words exist in the given pretrained model" % count)
 
         return W
 
     def split_data(self, ratio, R):
-        print "Randomly splitting rating data into training set (%.1f) and test set (%.1f)..." % (1 - ratio, ratio)
+        print ("Randomly splitting rating data into training set (%.1f) and test set (%.1f)..." % (1 - ratio, ratio))
         train = []
-        for i in xrange(R.shape[0]):
+        for i in range(R.shape[0]):
             user_rating = R[i].nonzero()[1]
             np.random.shuffle(user_rating)
             train.append((i, user_rating[0]))
 
-        remain_item = set(xrange(R.shape[1])) - set(zip(*train)[1])
+        remain_item = set(range(R.shape[1])) - set(zip(*train)[1])
 
         for j in remain_item:
             item_rating = R.tocsc().T[j].nonzero()[1]
@@ -121,7 +121,7 @@ class Data_Factory():
 
         num_addition = int((1 - ratio) * total_size) - len(train)
         if num_addition < 0:
-            print 'this ratio cannot be handled'
+            print('this ratio cannot be handled')
             sys.exit()
         else:
             train.extend(remain_rating_list[:num_addition])
@@ -134,10 +134,10 @@ class Data_Factory():
             trainset_u_idx = set(trainset_u_idx)
             trainset_i_idx = set(trainset_i_idx)
             if len(trainset_u_idx) != R.shape[0] or len(trainset_i_idx) != R.shape[1]:
-                print "Fatal error in split function. Check your data again or contact authors"
+                print ("Fatal error in split function. Check your data again or contact authors")
                 sys.exit()
 
-        print "Finish constructing training set and test set"
+        print ("Finish constructing training set and test set")
         return train, valid, test
 
     def generate_train_valid_test_file_from_R(self, path, R, ratio):
@@ -152,7 +152,7 @@ class Data_Factory():
         - ratio: (1-ratio), ratio/2 and ratio/2 of the entire dataset (R) will be training, valid and test set, respectively
         '''
         train, valid, test = self.split_data(ratio, R)
-        print "Save training set and test set to %s..." % path
+        print ("Save training set and test set to %s..." % path)
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -204,7 +204,7 @@ class Data_Factory():
         formatted_user_valid = []
         formatted_user_test = []
 
-        for i in xrange(R.shape[0]):
+        for i in range(R.shape[0]):
             if user_ratings_train.has_key(i):
                 formatted = [str(len(user_ratings_train[i]))]
                 formatted.extend(["%d:%.1f" % (j, R_lil[i, j])
@@ -236,7 +236,7 @@ class Data_Factory():
         f_train_user.close()
         f_valid_user.close()
         f_test_user.close()
-        print "\ttrain_user.dat, valid_user.dat, test_user.dat files are generated."
+        print ("\ttrain_user.dat, valid_user.dat, test_user.dat files are generated.")
 
         f_train_item = open(path + "/train_item.dat", "w")
         f_valid_item = open(path + "/valid_item.dat", "w")
@@ -246,7 +246,7 @@ class Data_Factory():
         formatted_item_valid = []
         formatted_item_test = []
 
-        for j in xrange(R.shape[1]):
+        for j in range(R.shape[1]):
             if item_ratings_train.has_key(j):
                 formatted = [str(len(item_ratings_train[j]))]
                 formatted.extend(["%d:%.1f" % (i, R_lil[i, j])
@@ -278,9 +278,9 @@ class Data_Factory():
         f_train_item.close()
         f_valid_item.close()
         f_test_item.close()
-        print "\ttrain_item.dat, valid_item.dat, test_item.dat files are generated."
+        print ("\ttrain_item.dat, valid_item.dat, test_item.dat files are generated.")
 
-        print "Done!"
+        print ("Done!")
 
     def generate_CTRCDLformat_content_file_from_D_all(self, path, D_all):
         '''
@@ -290,7 +290,7 @@ class Data_Factory():
         f_text = open(path + "mult.dat", "w")
         X = D_all['X_base']
         formatted_text = []
-        for i in xrange(X.shape[0]):
+        for i in range(X.shape[0]):
             word_count = sorted(set(X[i].nonzero()[1]))
             formatted = [str(len(word_count))]
             formatted.extend(["%d:%d" % (j, X[i, j]) for j in word_count])
@@ -320,16 +320,16 @@ class Data_Factory():
         # Validate data paths
         if os.path.isfile(path_rating):
             raw_ratings = open(path_rating, 'r')
-            print "Path - rating data: %s" % path_rating
+            print ("Path - rating data: %s" % path_rating)
         else:
-            print "Path(rating) is wrong!"
+            print ("Path(rating) is wrong!")
             sys.exit()
 
         if os.path.isfile(path_itemtext):
             raw_content = open(path_itemtext, 'r')
-            print "Path - document data: %s" % path_itemtext
+            print ("Path - document data: %s" % path_itemtext)
         else:
-            print "Path(item text) is wrong!"
+            print ("Path(item text) is wrong!")
             sys.exit()
 
         # 1st scan document file to filter items which have documents
@@ -344,8 +344,8 @@ class Data_Factory():
             tmp_id_plot.add(i)
         raw_content.close()
 
-        print "Preprocessing rating data..."
-        print "\tCounting # ratings of each user and removing users having less than %d ratings..." % min_rating
+        print ("Preprocessing rating data...")
+        print ("\tCounting # ratings of each user and removing users having less than %d ratings..." % min_rating)
         # 1st scan rating file to check # ratings of each user
         all_line = raw_ratings.read().splitlines()
         tmp_user = {}
@@ -406,11 +406,11 @@ class Data_Factory():
 
         R = csr_matrix((rating, (user, item)))
 
-        print "Finish preprocessing rating data - # user: %d, # item: %d, # ratings: %d" % (R.shape[0], R.shape[1], R.nnz)
+        print ("Finish preprocessing rating data - # user: %d, # item: %d, # ratings: %d" % (R.shape[0], R.shape[1], R.nnz))
 
         # 2nd scan document file to make idx2plot dictionary according to
         # indices of items in rating matrix
-        print "Preprocessing item document..."
+        print ("Preprocessing item document...")
 
         # Read Document File
         raw_content = open(path_itemtext, 'r')
@@ -425,8 +425,8 @@ class Data_Factory():
                 eachid_plot = (' '.join(tmp_plot)).split()[:max_length]
                 map_idtoplot[i] = ' '.join(eachid_plot)
 
-        print "\tRemoving stop words..."
-        print "\tFiltering words by TF-IDF score with max_df: %.1f, vocab_size: %d" % (_max_df, _vocab_size)
+        print ("\tRemoving stop words...")
+        print ("\tFiltering words by TF-IDF score with max_df: %.1f, vocab_size: %d" % (_max_df, _vocab_size))
 
         # Make vocabulary by document
         vectorizer = TfidfVectorizer(max_df=_max_df, stop_words={
@@ -452,6 +452,6 @@ class Data_Factory():
             'X_vocab': X_vocab,
         }
 
-        print "Finish preprocessing document data!"
+        print ("Finish preprocessing document data!")
 
         return R, D_all
