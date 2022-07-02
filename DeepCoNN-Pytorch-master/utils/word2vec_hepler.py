@@ -56,7 +56,7 @@ def save_embedding_weights(word_vec, out_path="data/embedding_weight.pt"):
     logger.info("Word embedding weight saved.")
 
 
-def load_embedding_weights(path="embedding_weight.pt"):
+def load_embedding_weights(path="../data/embedding_weight.pt"):
     return torch.load(path)
 
 

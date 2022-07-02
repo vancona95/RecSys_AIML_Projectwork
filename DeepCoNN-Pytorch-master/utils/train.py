@@ -10,7 +10,7 @@ train_data, dev_data, test_data = get_train_dev_test_data()
 know_data = pandas.concat([train_data, dev_data])
 
 config = DeepCoNNConfig(
-    num_epochs=1,
+    num_epochs=5,
     batch_size=2,
     learning_rate=1e-3,
     l2_regularization=1e-2,

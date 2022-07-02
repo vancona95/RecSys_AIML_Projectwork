@@ -337,6 +337,7 @@ class Data_Factory():
         all_line = raw_content.read().splitlines()
         for line in all_line:
             tmp = line.split('::')
+            print(tmp)
             i = tmp[0]
             tmp_plot = tmp[1].split('|')
             if tmp_plot[0] == '':
