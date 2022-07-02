@@ -2,6 +2,7 @@ import json
 import pandas as pd
 import numpy
 import re
+import csv
 
 file = pd.read_json("AMAZON_FASHION_5.json", lines = True)
 
@@ -33,6 +34,8 @@ with open("raw_item_document.csv", "w") as sources:
     for line in lines:
         r = re.compile("\|")
         sources.write(r.sub('::', line, 1))
+
+
 
 
 

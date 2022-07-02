@@ -89,7 +89,7 @@ class Data_Factory():
         W = np.zeros((len(vocab) + 1, dim))
         count = 0
         for _word, i in vocab:
-            if word2vec_dic.has_key(_word):
+            if word2vec_dic.__contains__(_word):
                 W[i + 1] = word2vec_dic[_word]
                 count = count + 1
             else:
@@ -107,7 +107,7 @@ class Data_Factory():
             np.random.shuffle(user_rating)
             train.append((i, user_rating[0]))
 
-        remain_item = set(range(R.shape[1])) - set(zip(*train)[1])
+        remain_item = set(range(R.shape[1])) - set(list(zip(*train))[1])
 
         for j in remain_item:
             item_rating = R.tocsc().T[j].nonzero()[1]
@@ -160,12 +160,12 @@ class Data_Factory():
         user_ratings_train = {}
         item_ratings_train = {}
         for i, j in train:
-            if user_ratings_train.has_key(i):
+            if user_ratings_train.__contains__(i):
                 user_ratings_train[i].append(j)
             else:
                 user_ratings_train[i] = [j]
 
-            if item_ratings_train.has_key(j):
+            if item_ratings_train.__contains__(j):
                 item_ratings_train[j].append(i)
             else:
                 item_ratings_train[j] = [i]
@@ -173,12 +173,12 @@ class Data_Factory():
         user_ratings_valid = {}
         item_ratings_valid = {}
         for i, j in valid:
-            if user_ratings_valid.has_key(i):
+            if user_ratings_valid.__contains__(i):
                 user_ratings_valid[i].append(j)
             else:
                 user_ratings_valid[i] = [j]
 
-            if item_ratings_valid.has_key(j):
+            if item_ratings_valid.__contains__(j):
                 item_ratings_valid[j].append(i)
             else:
                 item_ratings_valid[j] = [i]
@@ -186,12 +186,12 @@ class Data_Factory():
         user_ratings_test = {}
         item_ratings_test = {}
         for i, j in test:
-            if user_ratings_test.has_key(i):
+            if user_ratings_test.__contains__(i):
                 user_ratings_test[i].append(j)
             else:
                 user_ratings_test[i] = [j]
 
-            if item_ratings_test.has_key(j):
+            if item_ratings_test.__contains__(j):
                 item_ratings_test[j].append(i)
             else:
                 item_ratings_test[j] = [i]
@@ -205,7 +205,7 @@ class Data_Factory():
         formatted_user_test = []
 
         for i in range(R.shape[0]):
-            if user_ratings_train.has_key(i):
+            if user_ratings_train.__contains__(i):
                 formatted = [str(len(user_ratings_train[i]))]
                 formatted.extend(["%d:%.1f" % (j, R_lil[i, j])
                                   for j in sorted(user_ratings_train[i])])
@@ -213,7 +213,7 @@ class Data_Factory():
             else:
                 formatted_user_train.append("0")
 
-            if user_ratings_valid.has_key(i):
+            if user_ratings_valid.__contains__(i):
                 formatted = [str(len(user_ratings_valid[i]))]
                 formatted.extend(["%d:%.1f" % (j, R_lil[i, j])
                                   for j in sorted(user_ratings_valid[i])])
@@ -221,7 +221,7 @@ class Data_Factory():
             else:
                 formatted_user_valid.append("0")
 
-            if user_ratings_test.has_key(i):
+            if user_ratings_test.__contains__(i):
                 formatted = [str(len(user_ratings_test[i]))]
                 formatted.extend(["%d:%.1f" % (j, R_lil[i, j])
                                   for j in sorted(user_ratings_test[i])])
@@ -247,7 +247,7 @@ class Data_Factory():
         formatted_item_test = []
 
         for j in range(R.shape[1]):
-            if item_ratings_train.has_key(j):
+            if item_ratings_train.__contains__(j):
                 formatted = [str(len(item_ratings_train[j]))]
                 formatted.extend(["%d:%.1f" % (i, R_lil[i, j])
                                   for i in sorted(item_ratings_train[j])])
@@ -255,7 +255,7 @@ class Data_Factory():
             else:
                 formatted_item_train.append("0")
 
-            if item_ratings_valid.has_key(j):
+            if item_ratings_valid.__contains__(j):
                 formatted = [str(len(item_ratings_valid[j]))]
                 formatted.extend(["%d:%.1f" % (i, R_lil[i, j])
                                   for i in sorted(item_ratings_valid[j])])
@@ -263,7 +263,7 @@ class Data_Factory():
             else:
                 formatted_item_valid.append("0")
 
-            if item_ratings_test.has_key(j):
+            if item_ratings_test.__contains__(j):
                 formatted = [str(len(item_ratings_test[j]))]
                 formatted.extend(["%d:%.1f" % (i, R_lil[i, j])
                                   for i in sorted(item_ratings_test[j])])
@@ -336,13 +336,15 @@ class Data_Factory():
         tmp_id_plot = set()
         all_line = raw_content.read().splitlines()
         for line in all_line:
-            tmp = line.split('::')
-            print(tmp)
-            i = tmp[0]
-            tmp_plot = tmp[1].split('|')
-            if tmp_plot[0] == '':
-                continue
-            tmp_id_plot.add(i)
+            if line.startswith("B0"):
+                tmp = line.split('::')
+                print(tmp)
+                i = tmp[0]
+                tmp_plot = tmp[1].split('|')
+                if tmp_plot[0] == '':
+                    continue
+                tmp_id_plot.add(i)
+            else: continue
         raw_content.close()
 
         print ("Preprocessing rating data...")
@@ -441,7 +443,7 @@ class Data_Factory():
         X_sequence = []
         for i in range(R.shape[1]):
             X_sequence.append(
-                [vocab[word] + 1 for word in map_idtoplot[i].split() if vocab.has_key(word)])
+                [vocab[word] + 1 for word in map_idtoplot[i].split() if vocab.__contains__(word)])
 
         '''Make input for CTR & CDL'''
         baseline_vectorizer = CountVectorizer(vocabulary=vocab)
