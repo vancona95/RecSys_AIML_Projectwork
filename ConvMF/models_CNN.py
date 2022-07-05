@@ -10,8 +10,10 @@ from keras.models import Sequential
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.core import Reshape, Flatten, Dropout, Dense
 from keras.layers import Embedding
-from keras.legacy.models import Graph
+#from keras.legacy.models import Graph
 from keras.preprocessing import sequence
+from keras import Input
+from keras import layers
 
 
 class CNN_module():
@@ -30,17 +32,16 @@ class CNN_module():
         projection_dimension = output_dimesion
 
         filter_lengths = [3, 4, 5]
-        self.model = Graph()
 
         '''Embedding Layer'''
-        self.model.add_input(name='input', input_shape=(max_len,), dtype=int)
+        self.inputs = Input(name='input', shape=(max_len,), dtype=int)
 
         if init_W is None:
-            self.model.add_node(Embedding(
-                max_features, emb_dim, input_length=max_len), name='sentence_embeddings', input='input')
+            self.dense=layers.Dense(Embedding(
+                max_features, emb_dim, input_length=max_len), name='sentence_embeddings', input='input', activation= None)
         else:
-            self.model.add_node(Embedding(max_features, emb_dim, input_length=max_len, weights=[
-                                init_W / 20]), name='sentence_embeddings', input='input')
+            self.dense=layers.Dense(Embedding(max_features, emb_dim, input_length=max_len, weights=[
+                                init_W / 20]), name='sentence_embeddings', input='input', activation=None)
 
         '''Convolution Layer & Max Pooling Layer'''
         for i in filter_lengths:
