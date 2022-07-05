@@ -9,7 +9,7 @@ from keras.callbacks import EarlyStopping
 from keras.models import Sequential
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.core import Reshape, Flatten, Dropout, Dense
-from keras.layers.embeddings import Embedding
+from keras.layers import Embedding
 from keras.legacy.models import Graph
 from keras.preprocessing import sequence
 
