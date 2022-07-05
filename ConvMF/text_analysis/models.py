@@ -1,18 +1,16 @@
 '''
 Created on Dec 8, 2015
-
 @author: donghyun
 '''
 import numpy as np
 np.random.seed(1337)
 
 from keras.callbacks import EarlyStopping
-
-from keras.models import Sequential
+from keras.layers.containers import Sequential
 from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.core import Reshape, Flatten, Dropout, Dense
 from keras.layers.embeddings import Embedding
-from .legacy.models import Graph
+from keras.models import Graph
 from keras.preprocessing import sequence
 
 

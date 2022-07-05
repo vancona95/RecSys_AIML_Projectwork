@@ -12,7 +12,7 @@ import urllib3.connectionpool
 from util import eval_RMSE
 import math
 import numpy as np
-from models1 import CNN_module
+from models_CNN import CNN_module
 
 
 def ConvMF(res_dir, train_user, train_item, valid_user, test_user,
