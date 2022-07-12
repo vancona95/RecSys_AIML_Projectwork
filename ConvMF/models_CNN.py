@@ -11,7 +11,8 @@ from keras.layers.convolutional import Convolution2D, MaxPooling2D
 from keras.layers.core import Reshape, Flatten, Dropout, Dense
 from keras.layers import Embedding
 #from keras.models import Graph
-from .legacy.models import Graph
+#from .legacy.models import Graph
+from tensorflow import Graph
 from keras.preprocessing import sequence
 
 

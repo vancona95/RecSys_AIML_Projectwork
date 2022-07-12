@@ -112,3 +112,5 @@ class DeepCoNN(BaseModel):
         latent = torch.cat([user_latent, item_latent], dim=1)
         predict = self.share_layer(latent)
         return predict
+
+
