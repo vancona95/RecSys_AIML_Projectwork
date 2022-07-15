@@ -3,6 +3,7 @@ from typing import Set, List, Dict
 import sys
 import nltk
 nltk.download('wordnet')
+nltk.download('omw-1.4')
 import pandas
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
