@@ -39,11 +39,10 @@ def checkval(train, test, index, lista):
             bul = False
     return bul
 
-def insertmissing(lista, test, train, stringa):
+def removemissing(lista, test, stringa):
     for i in lista:
-        df3 = test[test[stringa] == i]
-        train = pd.concat([train, df3])
-    return train
+        test.drop(test[test[stringa] == i].index, inplace=True)
+    return test
 
 def get_triplets(mat):
 
@@ -78,29 +77,37 @@ def bpr_triplet_loss2(uid, pid, nid):
             #mat[raw_rating_data["user id"].loc[i], raw_rating_data["item id"].loc[i]] = 1.0
     #return mat
 
+def split(data):
+    uniqueval = data["user id"].unique()
+    train = pd.DataFrame()
+    test = pd.DataFrame()
+    for i in uniqueval:
+        df = data.loc[data["user id"] == i]
+        train2, test2 = train_test_split(df, test_size=0.2, random_state=54)
+        train = pd.concat([train, train2])
+        test = pd.concat([test, test2])
+    return train, test
+
+
 data = getdata()
 data2 = convertstring(data)
-train, test = train_test_split(data2, test_size=0.2, random_state=78)
+train, test = split(data2)
+print(train)
+print(test)
 
-user_list = []
 item_list = []  # è nel test set e non nel training
 
-var = checkval(train, test, 0, user_list)
 var2 = checkval(train, test, 1, item_list)
 
-print(var)
+
 print(var2)
 
-if len(user_list) > 0:
-   train =insertmissing(user_list, test, train, 'user id')
 
 if len(item_list) > 0:
-    train = insertmissing(item_list, test, train, 'item id')
+    train = removemissing(item_list, test, 'item id')
 
-var = checkval(train, test, 0, user_list)
 var2 = checkval(train, test, 1, item_list)
 
-print(var)
 print(var2)
 
 rows = len(data["user id"].unique())
@@ -114,15 +121,21 @@ mat = sp.lil_matrix((rows, cols), dtype=np.int32)
 
 
 
+
+
 #print(train)
 
 for i in range(train.shape[0]):
     mat[train["user id"].iloc[i], train["item id"].iloc[i]] = 1.0
 
-print(mat[1,24])
+print(mat[388,25])
 mat = mat.tocoo()
+#print(mat)
 
-train_uid, train_pid, train_nid = get_triplets(mat)
+
+#train_uid, train_pid, train_nid = get_triplets(mat)
+
+
 
 
 
