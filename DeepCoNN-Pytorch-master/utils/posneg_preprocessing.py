@@ -14,6 +14,7 @@ def getdata():
     raw_rating_data = raw_rating_data.rename(columns = {'reviewerID': 'user id', 'asin': 'item id', 'overall': 'rating'})
     return raw_rating_data
 
+
 def convertstring(raw_rating_data):
     uniqueval = raw_rating_data["user id"].unique()
     uniqueval2 = raw_rating_data["item id"].unique()
@@ -28,6 +29,7 @@ def convertstring(raw_rating_data):
         d = d+1
     return raw_rating_data
 
+
 def checkval(train, test, index, lista):
     bul = True
     df2 = test.iloc[:, index]
@@ -39,14 +41,22 @@ def checkval(train, test, index, lista):
             bul = False
     return bul
 
+
 def removemissing(lista, test, stringa):
     for i in lista:
         test.drop(test[test[stringa] == i].index, inplace=True)
     return test
 
-def get_triplets(mat):
 
-    return mat.row, mat.col, np.random.randint(mat.shape[1], size=len(mat.row))
+def get_triplets(mat):
+    vec = []
+    for index2 in mat.col:
+        x = np.random.randint(mat.shape[1])
+        while x in mat.col:
+            x = np.random.randint(mat.shape[1])
+        vec.append(x)
+
+    return mat.row, mat.col, vec
 
 def bpr_triplet_loss(X):
 
@@ -58,24 +68,6 @@ def bpr_triplet_loss(X):
         K.sum(user_latent * negative_item_latent, axis=-1, keepdims=True))
 
     return loss
-
-def bpr_triplet_loss2(uid, pid, nid):
-
-
-    # BPR loss
-    loss = 1.0 - K.logistic(
-        np.mean(uid * pid, axis=-1, keepdims=True) -
-        np.mean(uid * nid, axis=-1, keepdims=True))
-
-    return loss
-
-#def _build_interaction_matrix(rows, cols, raw_rating_data):
-    #mat = np.empty(rows, cols)
-
-    #for i in range(raw_rating_data.shape[0]):
-        #if raw_rating_data["rating"].loc[i] >= 4:
-            #mat[raw_rating_data["user id"].loc[i], raw_rating_data["item id"].loc[i]] = 1.0
-    #return mat
 
 def split(data):
     uniqueval = data["user id"].unique()
@@ -92,48 +84,35 @@ def split(data):
 data = getdata()
 data2 = convertstring(data)
 train, test = split(data2)
-print(train)
-print(test)
+
+train.to_csv("train_data.csv")
+test.to_csv("test_data.csv")
 
 item_list = []  # è nel test set e non nel training
 
 var2 = checkval(train, test, 1, item_list)
 
-
-print(var2)
-
-
 if len(item_list) > 0:
-    train = removemissing(item_list, test, 'item id')
+    test = removemissing(item_list, test, 'item id')
 
 var2 = checkval(train, test, 1, item_list)
-
-print(var2)
 
 rows = len(data["user id"].unique())
 cols = len(data["item id"].unique())
 
-print(rows)
-print(cols)
-#mat = np.zeros((rows, cols))
-
 mat = sp.lil_matrix((rows, cols), dtype=np.int32)
-
-
-
-
-
-#print(train)
 
 for i in range(train.shape[0]):
     mat[train["user id"].iloc[i], train["item id"].iloc[i]] = 1.0
 
-print(mat[388,25])
+print(mat[2,1])
 mat = mat.tocoo()
-#print(mat)
 
+train_uid, train_pid, train_nid = get_triplets(mat)
 
-#train_uid, train_pid, train_nid = get_triplets(mat)
+print(train_uid)
+print(train_pid)
+print(train_nid)
 
 
 
