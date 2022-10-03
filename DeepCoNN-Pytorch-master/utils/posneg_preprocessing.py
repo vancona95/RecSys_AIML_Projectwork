@@ -9,23 +9,23 @@ def getdata():
     file = pd.read_json("AMAZON_FASHION_5.json", lines = True)
 
     df = pd.DataFrame(file)
-    selected_columns = df[["reviewerID", "asin", "overall"]]
+    selected_columns = df[["reviewerID", "asin", "overall", "reviewText"]]
     raw_rating_data = selected_columns.copy()
-    raw_rating_data = raw_rating_data.rename(columns = {'reviewerID': 'user id', 'asin': 'item id', 'overall': 'rating'})
+    raw_rating_data = raw_rating_data.rename(columns = {'reviewerID': 'userID', 'asin': 'itemID', 'overall': 'rating', 'reviewText': 'review'})
     return raw_rating_data
 
 
 def convertstring(raw_rating_data):
-    uniqueval = raw_rating_data["user id"].unique()
-    uniqueval2 = raw_rating_data["item id"].unique()
+    uniqueval = raw_rating_data["userID"].unique()
+    uniqueval2 = raw_rating_data["itemID"].unique()
     c = 0
     d = 0
     for i in uniqueval:
-        raw_rating_data["user id"] = raw_rating_data["user id"].replace([i], c)
+        raw_rating_data["userID"] = raw_rating_data["userID"].replace([i], c)
         c = c+1
 
     for i in uniqueval2:
-        raw_rating_data["item id"] = raw_rating_data["item id"].replace([i], d)
+        raw_rating_data["itemID"] = raw_rating_data["itemID"].replace([i], d)
         d = d+1
     return raw_rating_data
 
@@ -48,14 +48,17 @@ def removemissing(lista, test, stringa):
     return test
 
 
-def get_triplets(mat):
+def get_triplets(mat, train):
     vec = []
-    for index2 in mat.col:
-        x = np.random.randint(mat.shape[1])
-        while x in mat.col:
-            x = np.random.randint(mat.shape[1])
+    for user in mat.row:
+        positem_series = train.loc[train["userID"] == user, "itemID"]
+        positem_list = positem_series.to_list()
+        matcol = mat.col
+        matcol = matcol.flatten()
+        x = np.random.choice(matcol)
+        while x in positem_list:
+            x = np.random.choice(matcol)
         vec.append(x)
-
     return mat.row, mat.col, vec
 
 def bpr_triplet_loss(X):
@@ -70,11 +73,11 @@ def bpr_triplet_loss(X):
     return loss
 
 def split(data):
-    uniqueval = data["user id"].unique()
+    uniqueval = data["userID"].unique()
     train = pd.DataFrame()
     test = pd.DataFrame()
     for i in uniqueval:
-        df = data.loc[data["user id"] == i]
+        df = data.loc[data["userID"] == i]
         train2, test2 = train_test_split(df, test_size=0.2, random_state=54)
         train = pd.concat([train, train2])
         test = pd.concat([test, test2])
@@ -93,26 +96,55 @@ item_list = []  # è nel test set e non nel training
 var2 = checkval(train, test, 1, item_list)
 
 if len(item_list) > 0:
-    test = removemissing(item_list, test, 'item id')
+    test = removemissing(item_list, test, 'itemID')
 
 var2 = checkval(train, test, 1, item_list)
 
-rows = len(data["user id"].unique())
-cols = len(data["item id"].unique())
+rows = len(data["userID"].unique())
+cols = len(data["itemID"].unique())
 
 mat = sp.lil_matrix((rows, cols), dtype=np.int32)
 
 for i in range(train.shape[0]):
-    mat[train["user id"].iloc[i], train["item id"].iloc[i]] = 1.0
+    mat[train["userID"].iloc[i], train["itemID"].iloc[i]] = 1.0
 
 print(mat[2,1])
 mat = mat.tocoo()
 
-train_uid, train_pid, train_nid = get_triplets(mat)
+train_uid, train_pid, train_nid = get_triplets(mat, train)
 
-print(train_uid)
-print(train_pid)
-print(train_nid)
+new_train = pd.DataFrame(columns= ["userID", "posID", "negID", "userReview", "posReview", "negReview"])
+new_train["userID"] = train_uid
+new_train["posID"] = train_pid
+new_train["negID"] = train_nid
+
+for i in range(new_train.shape[0]):
+    reviews_df = train.loc[train["userID"] == new_train["userID"].iloc[i], "review"]
+    reviews_list = reviews_df.to_list()
+    new_train["userReview"].iloc[i] = reviews_list
+
+
+for i in range(new_train.shape[0]):
+    reviews_df = train.loc[train["itemID"] == new_train["posID"].iloc[i], "review"]
+    reviews_list = reviews_df.to_list()
+    new_train["posReview"].iloc[i] = reviews_list
+
+
+for i in range(new_train.shape[0]):
+    reviews_df = train.loc[train["itemID"] == new_train["negID"].iloc[i], "review"]
+    reviews_list = reviews_df.to_list()
+    new_train["negReview"].iloc[i] = reviews_list
+
+
+
+
+print(type(new_train["userReview"].iloc[0]))
+
+with pd.option_context('display.max_columns', None):  # more options can be specified also    print(df)
+    print(new_train)
+
+
+
 
 
 
