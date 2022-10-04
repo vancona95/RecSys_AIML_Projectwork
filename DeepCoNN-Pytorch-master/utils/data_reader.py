@@ -34,7 +34,7 @@ def get_punctuations(path="data/punctuations.txt") -> Set[str]:
         return set(f.read().splitlines())
 
 
-def process_raw_data(in_path="data/AMAZON_FASHION_5.json", out_path="data/reviews.json"):
+def process_raw_data(in_path="data/AMAZON_FASHION_5.json", out_path="reviews.json"):
     """
     Read raw data and remove useless columns and clear review text.
     Then save the result to file system.

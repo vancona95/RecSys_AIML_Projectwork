@@ -3,19 +3,24 @@ from sklearn.model_selection import train_test_split
 import scipy.sparse as sp
 import numpy as np
 import scipy.stats as K
+import data_reader as dr
+import word2vec_hepler as w2vh
+from pandas import DataFrame
+import pickle
+from typing import Set, List, Dict
 
 
 def getdata():
-    file = pd.read_json("AMAZON_FASHION_5.json", lines = True)
+    file = pd.read_json("reviews.json", lines = True)
 
     df = pd.DataFrame(file)
-    selected_columns = df[["reviewerID", "asin", "overall", "reviewText"]]
-    raw_rating_data = selected_columns.copy()
-    raw_rating_data = raw_rating_data.rename(columns = {'reviewerID': 'userID', 'asin': 'itemID', 'overall': 'rating', 'reviewText': 'review'})
-    return raw_rating_data
+    #selected_columns = df[["reviewerID", "asin", "overall", "reviewText"]]
+    #raw_rating_data = selected_columns.copy()
+    #raw_rating_data = raw_rating_data.rename(columns = {'reviewerID': 'userID', 'asin': 'itemID', 'overall': 'rating', 'reviewText': 'review'})
+    return df
 
 
-def convertstring(raw_rating_data):
+def convertids(raw_rating_data):
     uniqueval = raw_rating_data["userID"].unique()
     uniqueval2 = raw_rating_data["itemID"].unique()
     c = 0
@@ -83,13 +88,26 @@ def split(data):
         test = pd.concat([test, test2])
     return train, test
 
+def get_reviews_in_idx2(data: DataFrame, word_vec) -> (Dict[str, DataFrame], Dict[str, DataFrame]):
+    """
+    1. Group review by user and item.
+    2. Convert word into word idx.
+    :return The dictionary from userID/itemID to review text in word idx with itemID/userID.
+    """
 
+    #data["review"] = data["review"].apply(w2vh.review2wid, args=[word_vec])
+
+    review_by_posuser = dict(list(data[["posID", "userReview"]].groupby(data["userID"])))
+    review_by_neguser = dict(list(data[["negID", "userReview"]].groupby(data["userID"])))
+    review_by_positem = dict(list(data[["userID", "posReview"]].groupby(data["posID"])))
+    review_by_negitem = dict(list(data[["userID", "negReview"]].groupby(data["negID"])))
+
+    return review_by_posuser, review_by_neguser, review_by_positem, review_by_negitem
+
+dr.process_raw_data() #preprocessing sulle recensioni
 data = getdata()
-data2 = convertstring(data)
+data2 = convertids(data)
 train, test = split(data2)
-
-train.to_csv("train_data.csv")
-test.to_csv("test_data.csv")
 
 item_list = []  # è nel test set e non nel training
 
@@ -110,6 +128,10 @@ for i in range(train.shape[0]):
 
 print(mat[2,1])
 mat = mat.tocoo()
+
+word_vec = dr.get_word_vec()
+train["review"] = train["review"].apply(w2vh.review2wid, args=[word_vec])
+
 
 train_uid, train_pid, train_nid = get_triplets(mat, train)
 
@@ -140,10 +162,16 @@ for i in range(new_train.shape[0]):
 
 print(type(new_train["userReview"].iloc[0]))
 
-with pd.option_context('display.max_columns', None):  # more options can be specified also    print(df)
-    print(new_train)
+#with pd.option_context('display.max_columns', None):  # more options can be specified also    print(df)
+    #print(new_train)
 
+#dr.save_embedding_weights(word_vec)
 
+review_by_posuser, review_by_neguser, review_by_positem, review_by_negitem = get_reviews_in_idx2(new_train, word_vec)
+
+print(review_by_posuser)
+#pickle.dump(user_review, open(ROOT_DIR.joinpath("data/user_review_word_idx.p"), "wb"))
+#pickle.dump(item_review, open(ROOT_DIR.joinpath("data/item_review_word_idx.p"), "wb"))
 
 
 
