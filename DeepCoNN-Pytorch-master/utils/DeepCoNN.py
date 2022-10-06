@@ -113,4 +113,18 @@ class DeepCoNN(BaseModel):
         predict = self.share_layer(latent)
         return predict
 
+    #def forward(self, user_review, item_review):
+        #"""
+        #Input Shape: (BatchSize, ReviewLength)
+        #Output Shape: (BatchSize)
+        #"""
+
+        #user_review = self.embedding(user_review)
+        #item_review = self.embedding(item_review)
+        #user_latent = self.user_layer(user_review)
+        #item_latent = self.item_layer(item_review)
+        #latent = torch.cat([user_latent, item_latent], dim=1)
+        #predict = self.share_layer(latent)
+        #return predict
+
 
