@@ -15,6 +15,7 @@ from path_helper import ROOT_DIR
 from word2vec_hepler import PAD_WORD_ID
 
 
+
 def save_model(model: torch.nn.Module, train_time: time.struct_time):
     path = "model/checkpoints/%s_%s.pt" % (
         model.__class__.__name__, time.strftime("%Y%m%d%H%M%S", train_time)
