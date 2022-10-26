@@ -2,29 +2,20 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import scipy.sparse as sp
 import numpy as np
-
 import data_reader as dr
 import word2vec_hepler as w2vh
-from pandas import DataFrame
-import pickle
-from typing import Set, List, Dict
 import warnings
 import itertools
-import torch.nn as nn
-
 import math
 import time
 from itertools import chain
 from typing import Dict, List
-
 import torch
 from pandas import DataFrame
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
-
 from BaseModel import BaseModel, BaseConfig
 from log_hepler import logger, add_log_file, remove_log_file
-from path_helper import ROOT_DIR
 from word2vec_hepler import PAD_WORD_ID
 from word2vec_hepler import WORD_EMBEDDING_SIZE, load_embedding_weights
 from DeepCoNN import DeepCoNNConfig, DeepCoNN
@@ -36,11 +27,8 @@ warnings.filterwarnings('ignore')
 # legge il dataset con le recensioni già processate e lo converte in df
 def getdata():
     file = pd.read_json("reviews.json", lines=True)
-
     df = pd.DataFrame(file)
-    # selected_columns = df[["reviewerID", "asin", "overall", "reviewText"]]
-    # raw_rating_data = selected_columns.copy()
-    # raw_rating_data = raw_rating_data.rename(columns = {'reviewerID': 'userID', 'asin': 'itemID', 'overall': 'rating', 'reviewText': 'review'})
+
     return df
 
 
@@ -95,20 +83,6 @@ def get_triplets(mat, train):
     return mat.row, mat.col, vec
 
 
-def bpr_triplet_loss(X):
-    positive_item_latent, negative_item_latent, user_latent = X
-
-    sum1 = user_latent * positive_item_latent
-    sum2 = user_latent * negative_item_latent
-
-    input2 = torch.sum(sum1) - torch.sum(sum2)
-
-    # BPR loss
-    loss = 1.0 - torch.nn.Sigmoid(input2)
-
-    return loss
-
-
 # effettua lo split del dataset in training e test set (80 - 20) su base utente
 def split(data):
     uniqueval = data["userID"].unique()
@@ -122,14 +96,11 @@ def split(data):
     return train, test
 
 
-def get_reviews_in_idx2(data: DataFrame, word_vec) -> (Dict[str, DataFrame], Dict[str, DataFrame]):
+def get_reviews_dictionaries(data: DataFrame) -> (Dict[str, DataFrame], Dict[str, DataFrame]):
     """
-    1. Group review by user and item.
-    2. Convert word into word idx.
+    Group review by user and item.
     :return The dictionary from userID/itemID to review text in word idx with itemID/userID.
     """
-
-    # data["review"] = data["review"].apply(w2vh.review2wid, args=[word_vec])
 
     review_by_user = dict(list(data[["posID", "posReview"]].groupby(data["userID"])))
     review_by_positem = dict(list(data[["userID", "posReview"]].groupby(data["posID"])))
@@ -138,19 +109,12 @@ def get_reviews_in_idx2(data: DataFrame, word_vec) -> (Dict[str, DataFrame], Dic
     return review_by_user, review_by_positem, review_by_negitem
 
 
-def get_review_dict2():
-    user_review = pickle.load(open(ROOT_DIR.joinpath("data/user_review_word_idx2.p"), "rb"))
-    item_review = pickle.load(open(ROOT_DIR.joinpath("data/item_review_word_idx2.p"), "rb"))
-    return user_review, item_review
-
-
 def get_data_train_test_preprocessed():
     dr.process_raw_data()  # preprocessing sulle recensioni
     data = getdata()
     data2 = convertids(data)
 
     train, test = split(data2)
-    test.to_csv("test1.csv")
 
     return data, train, test
 
@@ -160,12 +124,10 @@ def main_preprocessing():
     data, train, test = get_data_train_test_preprocessed()
     item_list = []
 
-    var2 = checkval(train, test, 1, item_list)
-
     # rimuoviamo gli item non presenti nel train set
     if len(item_list) > 0:
         test = removemissing(item_list, test, 'itemID')
-    var2 = checkval(train, test, 1, item_list)
+
 
     # -------------------------------------------------------------------------
     # ----------------TRIPLE EXTRACTION----------------------------------------
@@ -215,40 +177,10 @@ def main_preprocessing():
         new_train["negReview"].iloc[i] = list(itertools.chain.from_iterable(
             new_train["negReview"].iloc[i]))  # concateniamo le diverse recensioni in un'unica lista di parole
 
-    # with pd.option_context('display.max_columns', None):  # more options can be specified also    print(df)
-    # print(new_train)
-
-    # dr.save_embedding_weights(word_vec)
-
     # raggruppiamo le recensioni in new_train in base a userID, posID e negID
-    review_by_user, review_by_positem, review_by_negitem = get_reviews_in_idx2(new_train, word_vec)
-
-    # print(review_by_user) #posID #posReview
-    # print("\n")
-    # print(review_by_positem)
-    # print("\n")
-    # print(review_by_negitem)
-    # print("\n")
+    review_by_user, review_by_positem, review_by_negitem = get_reviews_dictionaries(new_train)
 
     return new_train, test, review_by_user, review_by_positem, review_by_negitem
-    # pickle.dump(user_review, open(ROOT_DIR.joinpath("data/user_review_word_idx.p"), "wb"))
-    # pickle.dump(item_review, open(ROOT_DIR.joinpath("data/item_review_word_idx.p"), "wb"))
-
-
-def save_model(model: torch.nn.Module, train_time: time.struct_time):
-    path = "model/checkpoints/%s_%s.pt" % (
-        model.__class__.__name__, time.strftime("%Y%m%d%H%M%S", train_time)
-    )
-    path = ROOT_DIR.joinpath(path)
-    torch.save(model, path)
-    logger.info(f"model saved: {path}")
-
-
-def load_model(path: str):
-    path = ROOT_DIR.joinpath(path)
-    # load model to cpu as default.
-    model = torch.load(path, map_location=torch.device('cpu'))
-    return model
 
 
 def load_reviews2(review: Dict[str, DataFrame], query_id: str, exclude_id: str, max_length) -> List[int]:
@@ -315,8 +247,6 @@ def get_data_loader2(data: DataFrame, config: BaseConfig):
                           for userID, negID in zip(data["userID"], data["negID"])]
     review_by_negitem2 = torch.stack(review_by_negitem2)
 
-    # ratings = torch.Tensor(data["rating"].to_list()).view(-1, 1)
-
     dataset = torch.utils.data.TensorDataset(user_reviews, review_by_positem2, review_by_negitem2)
     pin_memory = config.device not in ["cpu", "CPU"]
     data_iter = torch.utils.data.DataLoader(dataset, batch_size=config.batch_size, shuffle=True, pin_memory=pin_memory)
@@ -335,9 +265,7 @@ def get_data_loader_test(data: DataFrame, review_by_user, review_by_item, config
                     for userID, itemID in zip(data["userID"], data["itemID"])]
     item_reviews = torch.stack(item_reviews)
 
-    ratings = torch.Tensor(data["rating"].to_list()).view(-1, 1)
-
-    dataset = torch.utils.data.TensorDataset(user_reviews, item_reviews, ratings)
+    dataset = torch.utils.data.TensorDataset(user_reviews, item_reviews)
     pin_memory = config.device not in ["cpu", "CPU"]
     data_iter = torch.utils.data.DataLoader(dataset, batch_size=config.batch_size, shuffle=True, pin_memory=pin_memory)
     logger.info("Data iter loaded.")
@@ -375,7 +303,6 @@ def eval_model_test(model: BaseModel, data_iter: DataLoader) -> float:
     logger.debug("Evaluating %s..." % model_name)
     with torch.no_grad():
         predicts = []
-        ratings = []
         for batch_id, iter_i in enumerate(data_iter):
             user_review, item_review, _ = iter_i
             user_review = user_review.to(config.device)
@@ -400,12 +327,10 @@ def train_model3(model: BaseModel, train_data: DataFrame):
 
     opt = torch.optim.Adam(model.parameters(), config.learning_rate, weight_decay=config.l2_regularization)
     lr_s = lr_scheduler.ExponentialLR(opt, gamma=config.learning_rate_decay)
-    loss = torch.nn.MSELoss()
 
     last_progress = 0.
     last_loss = float("inf")
     train_data_iter2 = get_data_loader2(train_data, config)
-    # dev_data_iter = get_data_loader(dev_data, config)
     batches_num = math.ceil(len(train_data) / float(config.batch_size))
 
     while model.current_epoch < config.num_epochs:
@@ -420,8 +345,6 @@ def train_model3(model: BaseModel, train_data: DataFrame):
             opt.zero_grad()
             pos_predict = model(user_review, positem_review)
             neg_predict = model(user_review, negitem_review)
-            distances = torch.abs(pos_predict - neg_predict)
-            # li = - torch.sum(torch.log(torch.sigmoid(distances)))
             li = -torch.mean(torch.nn.functional.logsigmoid(pos_predict - neg_predict))
             li.backward()
             opt.step()
@@ -437,19 +360,32 @@ def train_model3(model: BaseModel, train_data: DataFrame):
 
         # complete one epoch
         train_loss = eval_model2(model, train_data_iter2)
-        # dev_loss = eval_model(model, dev_data_iter, loss)
         logger.info("Epoch %d complete. Total loss(train)=%f" % (model.current_epoch, train_loss))
 
         # save best model
         if train_loss < last_loss:
             last_loss = train_loss
-            save_model(model, train_time)
+            th.save_model(model, train_time)
 
         lr_s.step(model.current_epoch)
         model.current_epoch += 1
 
     logger.info("%s trained!" % model_name)
     remove_log_file(logger)
+
+
+def final_test(config1):
+    _, test, _, _, _ = main_preprocessing()
+    word_vec = dr.get_word_vec()
+    review_by_user_test, review_by_item_test = dr.get_reviews_in_idx(test, word_vec)
+    test_data_iter = get_data_loader_test(test, review_by_user_test, review_by_item_test, config1)
+    model = th.load_model("model/checkpoints/DeepCoNN_20221026204239.pt")
+    list_predicts = eval_model_test(model, test_data_iter)
+    final_test_df = pd.DataFrame()
+    final_test_df["userID"] = test["userID"]
+    final_test_df["itemID"] = test["itemID"]
+    final_test_df["predicted_ratings"] = list_predicts
+    return final_test_df
 
 
 config = DeepCoNNConfig(
@@ -467,26 +403,12 @@ config = DeepCoNNConfig(
     fm_k=8
 )
 
+if __name__ == "__main__":
+    # per training con bpr
+    # new_train, test, review_by_user2, review_by_positem2, review_by_negitem2 = main_preprocessing()
+    # model = DeepCoNN(config, load_embedding_weights())
+    # train_model3(model, new_train)
 
-def final_test(config1):
-    _, test, _, _, _ = main_preprocessing()
-    word_vec = dr.get_word_vec()
-    review_by_user_test, review_by_item_test = dr.get_reviews_in_idx(test, word_vec)
-    test_data_iter = get_data_loader_test(test, review_by_user_test, review_by_item_test, config1)
-    model = load_model("model/checkpoints/DeepCoNN_20221026204239.pt")
-    list_predicts = eval_model_test(model, test_data_iter)
-    final_test_df = pd.DataFrame()
-    final_test_df["userID"] = test["userID"]
-    final_test_df["itemID"] = test["itemID"]
-    final_test_df["predicted_ratings"] = list_predicts
-    return final_test_df
-
-
-# per training con bpr
-#new_train, test, review_by_user2, review_by_positem2, review_by_negitem2 = main_preprocessing()
-#model = DeepCoNN(config, load_embedding_weights())
-#train_model3(model, new_train)
-
-# per test csv
-final_df = final_test(config)
-final_df.to_csv("final_dataframe1e-3.csv")
+    # per test csv
+    final_df = final_test(config)
+    final_df.to_csv("final_dataframe1e-3.csv")
