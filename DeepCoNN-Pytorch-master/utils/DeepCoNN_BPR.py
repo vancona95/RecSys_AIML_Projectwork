@@ -183,7 +183,7 @@ def main_preprocessing():
     return new_train, test, review_by_user, review_by_positem, review_by_negitem
 
 
-def load_reviews2(review: Dict[str, DataFrame], query_id: str, exclude_id: str, max_length) -> List[int]:
+def load_reviews_train_BPR(review: Dict[str, DataFrame], query_id: str, exclude_id: str, max_length) -> List[int]:
     """
     1. Load review from review dict by userID/itemID
     2. Exclude unknown review by itemID/userID..
@@ -231,19 +231,19 @@ def load_reviews2(review: Dict[str, DataFrame], query_id: str, exclude_id: str, 
     return reviews
 
 
-def get_data_loader2(data: DataFrame, config: BaseConfig):
+def get_data_loader_train_BPR(data: DataFrame, config: BaseConfig):
     logger.info("Generating data iter...")
     _, _, review_by_user2, review_by_positem2, review_by_negitem2 = main_preprocessing()
 
-    user_reviews = [torch.LongTensor(load_reviews2(review_by_user2, userID, posID, config.max_review_length))
+    user_reviews = [torch.LongTensor(load_reviews_train_BPR(review_by_user2, userID, posID, config.max_review_length))
                     for userID, posID in zip(data["userID"], data["posID"])]
     user_reviews = torch.stack(user_reviews)
 
-    review_by_positem2 = [torch.LongTensor(load_reviews2(review_by_positem2, posID, userID, config.max_review_length))
+    review_by_positem2 = [torch.LongTensor(load_reviews_train_BPR(review_by_positem2, posID, userID, config.max_review_length))
                           for userID, posID in zip(data["userID"], data["posID"])]
     review_by_positem2 = torch.stack(review_by_positem2)
 
-    review_by_negitem2 = [torch.LongTensor(load_reviews2(review_by_negitem2, negID, userID, config.max_review_length))
+    review_by_negitem2 = [torch.LongTensor(load_reviews_train_BPR(review_by_negitem2, negID, userID, config.max_review_length))
                           for userID, negID in zip(data["userID"], data["negID"])]
     review_by_negitem2 = torch.stack(review_by_negitem2)
 
@@ -272,7 +272,7 @@ def get_data_loader_test(data: DataFrame, review_by_user, review_by_item, config
     return data_iter
 
 
-def eval_model2(model: BaseModel, data_iter: DataLoader) -> float:
+def eval_model_train_BPR(model: BaseModel, data_iter: DataLoader) -> float:
     model.eval()
     model_name = model.__class__.__name__
     config: BaseConfig = model.config
@@ -296,7 +296,7 @@ def eval_model2(model: BaseModel, data_iter: DataLoader) -> float:
         return loss.item()
 
 
-def eval_model_test(model: BaseModel, data_iter: DataLoader) -> float:
+def eval_model_test_BPR(model: BaseModel, data_iter: DataLoader) -> float:
     model.eval()
     model_name = model.__class__.__name__
     config: BaseConfig = model.config
@@ -304,7 +304,7 @@ def eval_model_test(model: BaseModel, data_iter: DataLoader) -> float:
     with torch.no_grad():
         predicts = []
         for batch_id, iter_i in enumerate(data_iter):
-            user_review, item_review, _ = iter_i
+            user_review, item_review = iter_i
             user_review = user_review.to(config.device)
             item_review = item_review.to(config.device)
             predict = model(user_review, item_review)
@@ -315,7 +315,7 @@ def eval_model_test(model: BaseModel, data_iter: DataLoader) -> float:
         return list_predicts
 
 
-def train_model3(model: BaseModel, train_data: DataFrame):
+def train_model_for_BPR(model: BaseModel, train_data: DataFrame):
     model_name = model.__class__.__name__
     train_time = time.localtime()
     add_log_file(logger, "log/%s_%s.log" % (model_name, time.strftime("%Y%m%d%H%M%S", train_time)))
@@ -330,7 +330,7 @@ def train_model3(model: BaseModel, train_data: DataFrame):
 
     last_progress = 0.
     last_loss = float("inf")
-    train_data_iter2 = get_data_loader2(train_data, config)
+    train_data_iter2 = get_data_loader_train_BPR(train_data, config)
     batches_num = math.ceil(len(train_data) / float(config.batch_size))
 
     while model.current_epoch < config.num_epochs:
@@ -359,7 +359,7 @@ def train_model3(model: BaseModel, train_data: DataFrame):
                 last_progress = progress
 
         # complete one epoch
-        train_loss = eval_model2(model, train_data_iter2)
+        train_loss = eval_model_train_BPR(model, train_data_iter2)
         logger.info("Epoch %d complete. Total loss(train)=%f" % (model.current_epoch, train_loss))
 
         # save best model
@@ -379,8 +379,8 @@ def final_test(config1):
     word_vec = dr.get_word_vec()
     review_by_user_test, review_by_item_test = dr.get_reviews_in_idx(test, word_vec)
     test_data_iter = get_data_loader_test(test, review_by_user_test, review_by_item_test, config1)
-    model = th.load_model("model/checkpoints/DeepCoNN_20221026204239.pt")
-    list_predicts = eval_model_test(model, test_data_iter)
+    model = th.load_model("model/checkpoints/DeepCoNN_20221027183344.pt")
+    list_predicts = eval_model_test_BPR(model, test_data_iter)
     final_test_df = pd.DataFrame()
     final_test_df["userID"] = test["userID"]
     final_test_df["itemID"] = test["itemID"]
@@ -391,7 +391,7 @@ def final_test(config1):
 config = DeepCoNNConfig(
     num_epochs=2,
     batch_size=2,
-    learning_rate=1e-4,
+    learning_rate=1e-5,
     l2_regularization=1e-3,
     learning_rate_decay=0.95,
     device="cuda:0" if torch.cuda.is_available() else "cpu",
@@ -405,10 +405,10 @@ config = DeepCoNNConfig(
 
 if __name__ == "__main__":
     # per training con bpr
-    # new_train, test, review_by_user2, review_by_positem2, review_by_negitem2 = main_preprocessing()
-    # model = DeepCoNN(config, load_embedding_weights())
-    # train_model3(model, new_train)
+    #new_train, test, review_by_user2, review_by_positem2, review_by_negitem2 = main_preprocessing()
+    #model = DeepCoNN(config, load_embedding_weights())
+    #train_model_for_BPR(model, new_train)
 
     # per test csv
     final_df = final_test(config)
-    final_df.to_csv("final_dataframe1e-3.csv")
+    final_df.to_csv("final_dataframe1e-5.csv")
