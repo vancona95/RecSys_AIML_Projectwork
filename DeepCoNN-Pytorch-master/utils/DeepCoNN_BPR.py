@@ -124,7 +124,7 @@ def main_preprocessing():
     data, train, test = get_data_train_test_preprocessed()
     item_list = []
 
-    # rimuoviamo gli item non presenti nel train set
+    # rimuoviamo gli item del test set non presenti nel train set
     if len(item_list) > 0:
         test = removemissing(item_list, test, 'itemID')
 
