@@ -58,13 +58,14 @@ def checkval(train, test, index, lista):
         if not i in col_one_list:
             lista.append(i)
             bul = False
-    return bul
+    return lista
 
 
 # rimuove gli item presenti nel test set che non sono presenti nel training set
-def removemissing(lista, test, stringa):
+def removemissing(lista1, train, test, col_name):
+    lista = checkval(train, test, 1, lista1)
     for i in lista:
-        test.drop(test[test[stringa] == i].index, inplace=True)
+        test.drop(test[test[col_name] == i].index, inplace=True)
     return test
 
 
@@ -124,9 +125,9 @@ def main_preprocessing():
     data, train, test = get_data_train_test_preprocessed()
     item_list = []
 
+
     # rimuoviamo gli item del test set non presenti nel train set
-    if len(item_list) > 0:
-        test = removemissing(item_list, test, 'itemID')
+    test = removemissing(item_list, train, test, 'itemID')
 
 
     # -------------------------------------------------------------------------
