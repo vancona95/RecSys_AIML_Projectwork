@@ -392,7 +392,7 @@ config = DeepCoNNConfig(
     num_epochs=2,
     batch_size=2,
     learning_rate=1e-5,
-    l2_regularization=1e-3,
+    l2_regularization=1e-2,
     learning_rate_decay=0.95,
     device="cuda:0" if torch.cuda.is_available() else "cpu",
     max_review_length=2048,  # Make sure this value is smaller than max_length in data_reader.py
@@ -404,11 +404,11 @@ config = DeepCoNNConfig(
 )
 
 if __name__ == "__main__":
-    # per training con bpr
-    #new_train, test, review_by_user2, review_by_positem2, review_by_negitem2 = main_preprocessing()
-    #model = DeepCoNN(config, load_embedding_weights())
-    #train_model_for_BPR(model, new_train)
+    # per training con bpr, decommentare le seguenti tre righe
+    new_train, test, review_by_user2, review_by_positem2, review_by_negitem2 = main_preprocessing()
+    model = DeepCoNN(config, load_embedding_weights())
+    train_model_for_BPR(model, new_train)
 
-    # per test csv
-    final_df = final_test(config)
-    final_df.to_csv("final_dataframe1e-5.csv")
+    # per test e generazione dei csv, decommentare le seguenti righe e inserire nome del csv da salvare
+    #final_df = final_test(config)
+    #final_df.to_csv("final_dataframe1e-5.csv")
