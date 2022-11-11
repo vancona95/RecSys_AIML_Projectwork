@@ -374,7 +374,7 @@ def train_model_for_BPR(model: BaseModel, train_data: DataFrame):
     remove_log_file(logger)
 
 
-def final_test(config1):
+def final_test(config1, modelpath):
     _, test, _, _, _ = main_preprocessing()
     word_vec = dr.get_word_vec()
     review_by_user_test, review_by_item_test = dr.get_reviews_in_idx(test, word_vec)
@@ -410,5 +410,6 @@ if __name__ == "__main__":
     train_model_for_BPR(model, new_train)
 
     # per test e generazione dei csv, decommentare le seguenti righe e inserire nome del csv da salvare
-    #final_df = final_test(config)
-    #final_df.to_csv("final_dataframe1e-5.csv")
+    modelpath = "model/checkpoints/DeepCoNN_20221027183344.pt"
+    final_df = final_test(config, modelpath)
+    final_df.to_csv("final_dataframe1e-5.csv")
